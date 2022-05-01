@@ -1,10 +1,15 @@
-from dataclasses import fields
+from dataclasses import asdict, fields
+from functools import reduce
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 from tqdm import tqdm
 
 from src.parser import FrequencyDomain, General, Nonlinear, Parser, TimeDomain
+
+RAW_DATA_PATH = Path("data/raw")
+OUTPUT_FILENAME = Path("data/processed.csv")
 
 
 def get_number_from_file(filename):
@@ -20,36 +25,42 @@ def get_time_from_file(filename):
         return "emergence"
 
 
-def create_dataframe(
+def aggregate_dicts(*args: dict[Any, Any]) -> dict[Any, Any]:
+    return reduce(lambda x, y: x | y, args)
+
+
+def aggregate_attributes(
     filename,
     general: General,
     timedomain: TimeDomain,
     frequencydomain: FrequencyDomain,
     nonlinear: Nonlinear,
-):
+) -> dict:
     results = {
         "file": filename,
         "no": get_number_from_file(filename.stem),
         "time": get_time_from_file(filename.stem),
     }
-    for field in fields(general):
-        results[field.name] = getattr(general, field.name)
-    for field in fields(timedomain):
-        results[field.name] = getattr(timedomain, field.name)
-    for field in fields(frequencydomain):
-        results[field.name] = getattr(frequencydomain, field.name)
-    for field in fields(nonlinear):
-        results[field.name] = getattr(nonlinear, field.name)
-    return results
+    return aggregate_dicts(
+        results,
+        asdict(general),
+        asdict(timedomain),
+        asdict(frequencydomain),
+        asdict(nonlinear),
+    )
+
+
+def save_dataframe(dataframe: pd.DataFrame, output_filename) -> None:
+    dataframe.to_csv(output_filename)
 
 
 def main():
     results = []
-    for file in tqdm(Path("data/raw").glob("*.html")):
+    for file in tqdm(RAW_DATA_PATH.glob("*.html")):
         parser = Parser(file)
-        results.append(create_dataframe(file, *parser.process()))
+        results.append(aggregate_attributes(file, *parser.process()))
 
-    pd.DataFrame(results).to_csv("data/processed.csv")
+    save_dataframe(pd.DataFrame(results).sort_values("no"), OUTPUT_FILENAME)
 
 
 if __name__ == "__main__":
