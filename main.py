@@ -51,7 +51,7 @@ def aggregate_attributes(
 
 
 def save_dataframe(dataframe: pd.DataFrame, output_filename) -> None:
-    dataframe.to_csv(output_filename)
+    dataframe.to_csv(output_filename, index=False)
 
 
 def main():
