@@ -12,11 +12,11 @@ RAW_DATA_PATH = Path("data/raw")
 OUTPUT_FILENAME = Path("data/processed.csv")
 
 
-def get_number_from_file(filename):
-    return filename.split("-")[0]
+def get_number_from_file(filename: str) -> int:
+    return int(filename.split("-")[0])
 
 
-def get_time_from_file(filename):
+def get_time_from_file(filename: str) -> str:
     if "-1" in filename:
         return "induction"
     elif "-2" in filename:
@@ -37,7 +37,7 @@ def aggregate_attributes(
     nonlinear: Nonlinear,
 ) -> dict:
     results = {
-        "file": filename,
+        "file": str(filename),
         "no": get_number_from_file(filename.stem),
         "time": get_time_from_file(filename.stem),
     }
